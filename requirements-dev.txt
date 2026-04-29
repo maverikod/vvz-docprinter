@@ -1,0 +1,9 @@
+# Author: Vasiliy Zdanovskiy
+# email: vasilyvz@gmail.com
+# Development tooling (CR-007)
+
+-r requirements.txt
+black>=24.0
+flake8>=7.0
+mypy>=1.8
+pytest>=8.0

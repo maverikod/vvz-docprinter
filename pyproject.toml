@@ -1,0 +1,30 @@
+# Author: Vasiliy Zdanovskiy
+# email: vasilyvz@gmail.com
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "docprinter"
+version = "0.2.0"
+description = "HTTP JSON-RPC DocPrinter service (Word templates from JSON)"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Vasiliy Zdanovskiy", email = "vasilyvz@gmail.com" },
+]
+dependencies = [
+  "mcp_proxy_adapter>=8.10.10",
+  "docxtpl>=0.16.0",
+]
+
+[project.scripts]
+docprinter = "docprinter.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["docprinter*"]
+
+[tool.black]
+target-version = ["py312"]

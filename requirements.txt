@@ -1,0 +1,6 @@
+# Author: Vasiliy Zdanovskiy
+# email: vasilyvz@gmail.com
+# MCP Server Dependencies
+
+mcp_proxy_adapter>=8.10.10
+docxtpl>=0.16.0
