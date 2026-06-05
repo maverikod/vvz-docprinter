@@ -1,0 +1,2 @@
+debian/conf.json.example usr/share/docprinter/
+debian/run-container.sh usr/lib/docprinter/

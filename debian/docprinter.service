@@ -1,0 +1,23 @@
+[Unit]
+Description=DocPrinter HTTP service (Docker)
+Documentation=https://github.com/
+After=docker.service containerd.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=notify
+NotifyAccess=main
+EnvironmentFile=-/etc/default/docprinter
+# Logs: wrapper streams `docker logs -f` into this file; keep unit logs in journal minimal.
+StandardOutput=journal
+StandardError=journal
+ExecStart=/usr/lib/docprinter/run-container.sh
+# Stop: SIGTERM to this script only first; script runs docker stop and stops sidecars.
+KillMode=mixed
+TimeoutStopSec=60
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

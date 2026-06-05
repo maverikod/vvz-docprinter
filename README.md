@@ -7,6 +7,7 @@ HTTP service (``mcp_proxy_adapter`` + Hypercorn) with JSON-RPC commands **`print
 - **`docprinter/`** — application package (``python -m docprinter``).
 - **`config/`** — sample server JSON for the adapter.
 - **`docker/`** — image build and helper scripts (run from repo root).
+- **`scripts/`** — helpers, including **`build-deb.sh`** (checks build deps; as root installs them via ``apt-get`` and runs ``dpkg-buildpackage``).
 - **`logs/`** — runtime log directory (contents gitignored).
 
 Rules bundle checklist (portable Cursor/agents template): see ``rules_template_agents_protocols_updated.zip`` → ``rules_template/README.md`` (install, §0/§7, overlay, optional ``projectid``).
@@ -29,6 +30,42 @@ Build the image, then start the container (**TCP 9001** on host and inside), cur
 ```
 
 Overrides for ``run.sh``: ``DOCPRINTER_IMAGE``, ``DOCPRINTER_NAME``, ``DOCPRINTER_PORT`` (default ``9001``). Ensure ``./logs`` and ``./runtime/*`` are writable by your UID.
+
+### Docker Hub
+
+Publish the image (requires ``docker login``):
+
+```bash
+chmod +x docker/push.sh
+./docker/push.sh
+```
+
+Default registry image: **``vasilyvz/docprinter:latest``** (override with ``DOCPRINTER_HUB_IMAGE``).
+
+### Debian package (Ubuntu 22.04 / 26.04)
+
+Build the ``.deb``:
+
+```bash
+./scripts/build-deb.sh          # or: sudo ./scripts/build-deb.sh
+```
+
+Install on a clean host (pulls image from Docker Hub on configure):
+
+```bash
+sudo apt install ./docprinter_0.2.0-1_all.deb
+# or: sudo dpkg -i ../docprinter_0.2.0-1_all.deb && sudo apt-get install -f
+```
+
+The package depends on **``docker.io``** or **``docker-ce``**, **``adduser``**, **``systemd``**. On configure it checks the Docker daemon, creates user **``docprinter``** in group **``docker``**, host directories, and runs **``docker pull``** for the image in ``/etc/default/docprinter``.
+
+| Host path | Role |
+|-----------|------|
+| ``/etc/docprinter/conf.json`` | Service config (mounted read-only into the container) |
+| ``/var/log/docprinter/`` | Application and container log stream |
+| ``/var/docprinter/`` | Runtime cache (``output/``, ``work/``, ``uploads/``) |
+
+Service: ``systemctl status docprinter`` — HTTP on port **9001** by default.
 
 ## JSON-RPC
 

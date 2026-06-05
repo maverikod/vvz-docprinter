@@ -1,0 +1,81 @@
+#!/bin/sh
+set -e
+
+docprinter_check_prereqs() {
+    missing=""
+    for pkg in adduser; do
+        if ! dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "install ok installed"; then
+            missing="${missing} ${pkg}"
+        fi
+    done
+    if ! command -v docker >/dev/null 2>&1; then
+        missing="${missing} docker"
+    fi
+    if [ -n "$missing" ]; then
+        echo "docprinter: missing required components:${missing}" >&2
+        echo "docprinter: install docker.io (or docker-ce) and adduser, then: apt-get install -f" >&2
+        return 1
+    fi
+    if ! getent group docker >/dev/null 2>&1; then
+        echo "docprinter: docker group not found; reinstall docker.io or docker-ce" >&2
+        return 1
+    fi
+    if ! docker info >/dev/null 2>&1; then
+        echo "docprinter: Docker daemon is not running; start it: systemctl start docker" >&2
+        return 1
+    fi
+    return 0
+}
+
+case "$1" in
+configure)
+    if ! docprinter_check_prereqs; then
+        exit 1
+    fi
+
+    if ! getent passwd docprinter >/dev/null 2>&1; then
+        adduser --system --group --home /var/docprinter --no-create-home \
+            --shell /usr/sbin/nologin docprinter
+    fi
+
+    if ! getent group docker >/dev/null 2>&1; then
+        echo "docprinter: docker group missing after prerequisite check" >&2
+        exit 1
+    fi
+    if ! id -nG docprinter 2>/dev/null | tr ' ' '\n' | grep -qx docker; then
+        adduser docprinter docker 2>/dev/null || usermod -aG docker docprinter
+    fi
+
+    mkdir -p /etc/docprinter \
+        /var/log/docprinter \
+        /var/docprinter/output \
+        /var/docprinter/work \
+        /var/docprinter/uploads
+    chown docprinter:docprinter /var/docprinter /var/log/docprinter
+    chmod 0755 /var/docprinter /var/log/docprinter
+    chown -R docprinter:docprinter /var/docprinter/output /var/docprinter/work /var/docprinter/uploads
+    chmod 0755 /var/docprinter/output /var/docprinter/work /var/docprinter/uploads
+
+    if [ ! -f /etc/docprinter/conf.json ]; then
+        cp /usr/share/docprinter/conf.json.example /etc/docprinter/conf.json
+        chmod 0644 /etc/docprinter/conf.json
+    fi
+
+    touch /var/log/docprinter/docprinter.log
+    chown docprinter:docprinter /var/log/docprinter/docprinter.log
+    chmod 0644 /var/log/docprinter/docprinter.log
+
+    # shellcheck source=/dev/null
+    . /etc/default/docprinter
+    IMG="${DOCPRINTER_IMAGE:-vasilyvz/docprinter:latest}"
+    echo "docprinter: pulling Docker image ${IMG} ..."
+    if ! docker pull "$IMG"; then
+        echo "docprinter: docker pull ${IMG} failed; check network/registry and retry: docker pull ${IMG}" >&2
+        exit 1
+    fi
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0

@@ -1,0 +1,4 @@
+# DocPrinter Docker image on Docker Hub (override before first install or edit then reinstall).
+DOCPRINTER_IMAGE=vasilyvz/docprinter:latest
+DOCPRINTER_NAME=docprinter
+DOCPRINTER_PORT=9001

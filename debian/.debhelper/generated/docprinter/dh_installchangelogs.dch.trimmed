@@ -1,0 +1,5 @@
+docprinter (0.2.0-1) unstable; urgency=medium
+
+  * Initial Debian packaging: systemd + Docker, post-install image pull.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Thu, 30 Apr 2026 12:00:00 +0000

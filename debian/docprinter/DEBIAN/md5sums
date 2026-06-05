@@ -1,0 +1,5 @@
+6bd9f2d1bde94c6fc6a7c72853851e80  usr/lib/docprinter/run-container.sh
+aa5c7b02d827e4607d49cbcf0da77ea8  usr/lib/systemd/system/docprinter.service
+25e5f923fa43ee909cf68122117cbac2  usr/share/doc/docprinter/changelog.Debian.gz
+17e9ac82ec377549188d26fda6499679  usr/share/doc/docprinter/copyright
+8e3448ac075edf5b40817f9dad0b1ad8  usr/share/docprinter/conf.json.example

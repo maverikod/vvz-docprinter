@@ -1,0 +1,8 @@
+docprinter (0.2.0-1) unstable; urgency=medium
+
+  * Debian package: systemd + Docker Hub image pull on configure.
+  * Host paths: /etc/docprinter, /var/log/docprinter, /var/docprinter cache.
+  * Install checks: docker.io/docker-ce, docker daemon, docker group, directories.
+  * Tested on Ubuntu 22.04 LTS and 26.04 LTS.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Thu, 05 Jun 2026 12:00:00 +0000

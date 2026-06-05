@@ -73,3 +73,5 @@ runtime/*.pid
 !runtime/work/.gitkeep
 !runtime/uploads/.gitkeep
 test-data/*
+
+.cst/

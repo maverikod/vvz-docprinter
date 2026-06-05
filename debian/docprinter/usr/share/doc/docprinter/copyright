@@ -1,0 +1,7 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: docprinter
+Source: https://github.com/
+
+Files: *
+Copyright: 2026 Vasiliy Zdanovskiy <vasilyvz@gmail.com>
+License: Proprietary or project license — see upstream repository.

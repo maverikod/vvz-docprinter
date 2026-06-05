@@ -1,0 +1,21 @@
+Source: docprinter
+Section: net
+Priority: optional
+Maintainer: Vasiliy Zdanovskiy <vasilyvz@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+
+Package: docprinter
+Architecture: all
+Depends: adduser,
+         systemd,
+         docker.io | docker-ce,
+         ${misc:Depends}
+Description: DocPrinter HTTP service (Docker + systemd)
+ Runs the DocPrinter container under systemd on Ubuntu 22.04 LTS and 26.04 LTS.
+ On configure: verifies docker.io (or docker-ce), the docker group, host
+ directories, and pulls the image from Docker Hub (default vasilyvz/docprinter:latest).
+ Host mounts: /etc/docprinter (config), /var/log/docprinter (logs),
+ /var/docprinter (runtime cache: output, work, uploads). Service user docprinter
+ must belong to group docker.

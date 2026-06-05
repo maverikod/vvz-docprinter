@@ -1,0 +1,69 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+configure)
+    if ! getent passwd docprinter >/dev/null 2>&1; then
+        adduser --system --group --home /var/lib/docprinter --no-create-home \
+            --shell /usr/sbin/nologin docprinter
+    fi
+    mkdir -p /etc/docprinter \
+        /var/log/docprinter \
+        /var/lib/docprinter/runtime/output \
+        /var/lib/docprinter/runtime/work \
+        /var/lib/docprinter/runtime/uploads
+    chown docprinter:docprinter /var/lib/docprinter /var/log/docprinter
+    chmod 0755 /var/lib/docprinter /var/log/docprinter
+
+    if [ ! -f /etc/docprinter/conf.json ]; then
+        cp /usr/share/docprinter/conf.json.example /etc/docprinter/conf.json
+        chmod 0644 /etc/docprinter/conf.json
+    fi
+
+    touch /var/log/docprinter/docprinter.log
+    chmod 0644 /var/log/docprinter/docprinter.log
+
+    if command -v docker >/dev/null 2>&1; then
+        # shellcheck source=/dev/null
+        . /etc/default/docprinter
+        IMG="${DOCPRINTER_IMAGE:-docprinter:latest}"
+        if ! docker pull "$IMG"; then
+            echo "docprinter: warning: docker pull $IMG failed; fix network or registry, then: docker pull $IMG" >&2
+        fi
+    fi
+    ;;
+esac
+
+# Automatically added by dh_installsystemd/13.14.1ubuntu5
+if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-deconfigure" ] || [ "$1" = "abort-remove" ] ; then
+	# The following line should be removed in trixie or trixie+1
+	deb-systemd-helper unmask 'docprinter.service' >/dev/null || true
+
+	# was-enabled defaults to true, so new installations run enable.
+	if deb-systemd-helper --quiet was-enabled 'docprinter.service'; then
+		# Enables the unit on first installation, creates new
+		# symlinks on upgrades if the unit file has changed.
+		deb-systemd-helper enable 'docprinter.service' >/dev/null || true
+	else
+		# Update the statefile to add new symlinks (if any), which need to be
+		# cleaned up on purge. Also remove old symlinks.
+		deb-systemd-helper update-state 'docprinter.service' >/dev/null || true
+	fi
+fi
+# End automatically added section
+# Automatically added by dh_installsystemd/13.14.1ubuntu5
+if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-deconfigure" ] || [ "$1" = "abort-remove" ] ; then
+	if [ -d /run/systemd/system ]; then
+		systemctl --system daemon-reload >/dev/null || true
+		if [ -n "$2" ]; then
+			_dh_action=restart
+		else
+			_dh_action=start
+		fi
+		deb-systemd-invoke $_dh_action 'docprinter.service' >/dev/null || true
+	fi
+fi
+# End automatically added section
+
+
+exit 0
