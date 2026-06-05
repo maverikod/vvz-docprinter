@@ -46,6 +46,9 @@ sleep 3
 systemctl status docprinter --no-pager || true
 
 echo "=== HTTP health ==="
-curl -sf "http://127.0.0.1:9001/health" && echo
+# shellcheck source=/dev/null
+. /etc/default/docprinter 2>/dev/null || true
+HOST_PORT="${DOCPRINTER_HOST_PORT:-${DOCPRINTER_PORT:-9001}}"
+curl -sf "http://127.0.0.1:${HOST_PORT}/health" && echo
 
 echo "Fresh install test OK."

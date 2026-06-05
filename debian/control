@@ -15,7 +15,8 @@ Depends: adduser,
 Description: DocPrinter HTTP service (Docker + systemd)
  Runs the DocPrinter container under systemd on Ubuntu 22.04 LTS and 26.04 LTS.
  On configure: verifies docker.io (or docker-ce), the docker group, host
- directories, and pulls the image from Docker Hub (default vasilyvz/docprinter:latest).
+ directories, and pulls the pinned image from Docker Hub on install/upgrade
+ (see /usr/share/docprinter/docker-image.env; factory /etc/default sync).
  Host mounts: /etc/docprinter (config), /var/log/docprinter (logs),
  /var/docprinter (runtime cache: output, work, uploads). Service user docprinter
  must belong to group docker.

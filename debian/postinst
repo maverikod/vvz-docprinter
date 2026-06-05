@@ -61,17 +61,102 @@ configure)
         chmod 0644 /etc/docprinter/conf.json
     fi
 
+    if grep -q '"advertised_host": null' /etc/docprinter/conf.json 2>/dev/null; then
+        ADV_HOST=$(hostname -I 2>/dev/null | awk '{print $1}')
+        if [ -n "$ADV_HOST" ]; then
+            sed -i "s/\"advertised_host\": null/\"advertised_host\": \"${ADV_HOST}\"/" \
+                /etc/docprinter/conf.json
+            echo "docprinter: server.advertised_host=${ADV_HOST} (for MCP Proxy registration)"
+        else
+            echo "docprinter: warning: set server.advertised_host in /etc/docprinter/conf.json" >&2
+        fi
+    fi
+
+    if grep -q '"enabled": true' /etc/docprinter/conf.json 2>/dev/null \
+        && grep -q '"instance_uuid": null' /etc/docprinter/conf.json 2>/dev/null; then
+        INST_UUID=""
+        if command -v uuidgen >/dev/null 2>&1; then
+            INST_UUID=$(uuidgen)
+        elif [ -r /proc/sys/kernel/random/uuid ]; then
+            INST_UUID=$(cat /proc/sys/kernel/random/uuid)
+        fi
+        if [ -n "$INST_UUID" ]; then
+            sed -i "s/\"instance_uuid\": null/\"instance_uuid\": \"${INST_UUID}\"/" \
+                /etc/docprinter/conf.json
+            echo "docprinter: registration.instance_uuid=${INST_UUID}"
+        else
+            echo "docprinter: warning: set registration.instance_uuid in /etc/docprinter/conf.json" >&2
+        fi
+    fi
+
+    if grep -q '"enabled": true' /etc/docprinter/conf.json 2>/dev/null \
+        && grep -q '"server_id": "docprinter"' /etc/docprinter/conf.json 2>/dev/null; then
+        echo "docprinter: MCP Proxy auto-registration enabled (server_id docprinter)"
+    fi
+
     touch /var/log/docprinter/docprinter.log
     chown docprinter:docprinter /var/log/docprinter/docprinter.log
     chmod 0644 /var/log/docprinter/docprinter.log
 
-    # shellcheck source=/dev/null
-    . /etc/default/docprinter
-    IMG="${DOCPRINTER_IMAGE:-vasilyvz/docprinter:latest}"
-    echo "docprinter: pulling Docker image ${IMG} ..."
-    if ! docker pull "$IMG"; then
-        echo "docprinter: docker pull ${IMG} failed; check network/registry and retry: docker pull ${IMG}" >&2
+    PACKAGE_IMAGE=""
+    PKG_VER=""
+    if command -v dpkg-query >/dev/null 2>&1; then
+        PKG_VER=$(dpkg-query -W -f='${Version}' docprinter 2>/dev/null || true)
+    fi
+    if [ -f /usr/share/docprinter/docker-image.env ]; then
+        # shellcheck source=/dev/null
+        . /usr/share/docprinter/docker-image.env
+        PACKAGE_IMAGE="${DOCPRINTER_IMAGE:-}"
+    fi
+
+    if [ -z "$PACKAGE_IMAGE" ]; then
+        echo "docprinter: missing /usr/share/docprinter/docker-image.env" >&2
         exit 1
+    fi
+
+    if [ -n "$PKG_VER" ]; then
+        EXPECTED="vasilyvz/docprinter:${PKG_VER}"
+        if [ "$PACKAGE_IMAGE" != "$EXPECTED" ]; then
+            echo "docprinter: image tag must match package version: got ${PACKAGE_IMAGE}, expected ${EXPECTED}" >&2
+            exit 1
+        fi
+    fi
+
+    if [ -f /etc/default/docprinter ]; then
+        if grep -q '^DOCPRINTER_IMAGE=' /etc/default/docprinter 2>/dev/null; then
+            sed -i "s|^DOCPRINTER_IMAGE=.*|DOCPRINTER_IMAGE=${PACKAGE_IMAGE}|" \
+                /etc/default/docprinter
+        fi
+    fi
+
+    IMG="${PACKAGE_IMAGE}"
+    echo "docprinter: pulling Docker image ${IMG} (package version ${PKG_VER:-unknown}) ..."
+    if ! docker pull "$IMG"; then
+        echo "docprinter: docker pull ${IMG} failed; image tag must match installed package version" >&2
+        echo "docprinter: retry after: docker pull ${IMG}" >&2
+        exit 1
+    fi
+
+    HOST_PORT="${DOCPRINTER_HOST_PORT:-${DOCPRINTER_PORT:-${DOCPRINTER_CONTAINER_PORT:-9001}}}"
+    CONTAINER_PORT="${DOCPRINTER_CONTAINER_PORT:-${DOCPRINTER_PORT:-9001}}"
+    BIND="${DOCPRINTER_BIND:-127.0.0.1}"
+    echo "docprinter: after start, HTTP on host http://${BIND}:${HOST_PORT}/ (container port ${CONTAINER_PORT})"
+
+    if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
+        systemctl daemon-reload || true
+        if deb-systemd-helper --quiet is-enabled docprinter.service 2>/dev/null \
+            | grep -q enabled; then
+            if [ -n "$2" ]; then
+                SYSTEMD_ACTION=try-restart
+            else
+                SYSTEMD_ACTION=start
+            fi
+            if ! systemctl "$SYSTEMD_ACTION" docprinter.service >/dev/null 2>&1; then
+                echo "docprinter: warning: systemctl ${SYSTEMD_ACTION} failed (package installed OK)" >&2
+                echo "docprinter: diagnose: journalctl -u docprinter -n 30 --no-pager" >&2
+                echo "docprinter: then: systemctl restart docprinter" >&2
+            fi
+        fi
     fi
     ;;
 esac

@@ -44,17 +44,17 @@ Default registry image: **``vasilyvz/docprinter:latest``** (override with ``DOCP
 
 ### Debian package (Ubuntu 22.04 / 26.04)
 
-Build the ``.deb``:
+Build the ``.deb`` — **always** builds and pushes ``vasilyvz/docprinter:<version>`` to Docker Hub, where ``<version>`` equals the Debian package version from ``debian/changelog`` (e.g. package ``0.2.0-12`` → image ``vasilyvz/docprinter:0.2.0-12``). Needs ``docker login``.
 
 ```bash
 ./scripts/build-deb.sh          # or: sudo ./scripts/build-deb.sh
 ```
 
-Install on a clean host (pulls image from Docker Hub on configure):
+Install on a clean host (pulls ``vasilyvz/docprinter:<same-version>`` on configure):
 
 ```bash
-sudo apt install ./docprinter_0.2.0-1_all.deb
-# or: sudo dpkg -i ../docprinter_0.2.0-1_all.deb && sudo apt-get install -f
+sudo apt install ./docprinter_0.2.0-21_all.deb
+# or: sudo dpkg -i ../docprinter_0.2.0-12_all.deb && sudo apt-get install -f
 ```
 
 The package depends on **``docker.io``** or **``docker-ce``**, **``adduser``**, **``systemd``**. On configure it checks the Docker daemon, creates user **``docprinter``** in group **``docker``**, host directories, and runs **``docker pull``** for the image in ``/etc/default/docprinter``.
@@ -65,7 +65,9 @@ The package depends on **``docker.io``** or **``docker-ce``**, **``adduser``**, 
 | ``/var/log/docprinter/`` | Application and container log stream |
 | ``/var/docprinter/`` | Runtime cache (``output/``, ``work/``, ``uploads/``) |
 
-Service: ``systemctl status docprinter`` — HTTP on port **9001** by default.
+Service: ``systemctl status docprinter`` — HTTP on **127.0.0.1:9001** by default (``DOCPRINTER_BIND=127.0.0.1``, ``DOCPRINTER_HOST_PORT=9001`` in ``/etc/default/docprinter``). Set ``DOCPRINTER_BIND=0.0.0.0`` or a specific host IP to listen on all interfaces or one address.
+
+If ``docker -p`` fails on the host, ``run-container.sh`` retries with ``--network host`` and saves ``DOCPRINTER_NETWORK=host`` in ``/etc/default/docprinter``.
 
 ## JSON-RPC
 

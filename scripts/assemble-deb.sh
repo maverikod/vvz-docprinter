@@ -1,10 +1,22 @@
 #!/usr/bin/env bash
 # Assemble docprinter .deb without debhelper (when dh is unavailable).
 # Output: ../docprinter_<version>_all.deb relative to repo root.
+#
+# By default runs scripts/prepare-deb-release.sh first (sync refs + mandatory docker push).
+# Pass --deb-only only when prepare-deb-release.sh already ran in this build.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT}"
+
+deb_only=false
+if [[ "${1:-}" == "--deb-only" ]]; then
+  deb_only=true
+fi
+
+if [[ "${deb_only}" != true ]]; then
+  "${ROOT}/scripts/prepare-deb-release.sh"
+fi
 
 version="$(sed -n '1s/docprinter (\([^)]*\)).*/\1/p' debian/changelog)"
 if [[ -z "${version}" ]]; then
@@ -24,8 +36,10 @@ mkdir -p "${pkg}/DEBIAN" \
   "${pkg}/etc/default"
 
 install -m 0755 debian/run-container.sh "${pkg}/usr/lib/docprinter/run-container.sh"
+install -m 0755 debian/remove-container.sh "${pkg}/usr/lib/docprinter/remove-container.sh"
 install -m 0644 debian/docprinter.service "${pkg}/usr/lib/systemd/system/docprinter.service"
 install -m 0644 debian/conf.json.example "${pkg}/usr/share/docprinter/conf.json.example"
+install -m 0644 debian/docker-image.env "${pkg}/usr/share/docprinter/docker-image.env"
 install -m 0644 debian/docprinter.default "${pkg}/etc/default/docprinter"
 install -m 0644 debian/copyright "${pkg}/usr/share/doc/docprinter/copyright"
 gzip -c debian/changelog > "${pkg}/usr/share/doc/docprinter/changelog.Debian.gz"
@@ -42,13 +56,14 @@ Priority: optional
 Description: DocPrinter HTTP service (Docker + systemd)
  Runs the DocPrinter container under systemd on Ubuntu 22.04 LTS and 26.04 LTS.
  On configure: verifies docker.io (or docker-ce), the docker group, host
- directories, and pulls the image from Docker Hub (default vasilyvz/docprinter:latest).
+ directories, and pulls the pinned image from Docker Hub on install/upgrade
+ (see /usr/share/docprinter/docker-image.env; factory /etc/default sync).
  Host mounts: /etc/docprinter (config), /var/log/docprinter (logs),
  /var/docprinter (runtime cache: output, work, uploads). Service user docprinter
  must belong to group docker.
 EOF
 
-SYSTEMD_POSTINST=$'if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-deconfigure" ] || [ "$1" = "abort-remove" ] ; then\n\tdeb-systemd-helper unmask '"'"'docprinter.service'"'"' >/dev/null || true\n\tif deb-systemd-helper --quiet was-enabled '"'"'docprinter.service'"'"'; then\n\t\tdeb-systemd-helper enable '"'"'docprinter.service'"'"' >/dev/null || true\n\telse\n\t\tdeb-systemd-helper update-state '"'"'docprinter.service'"'"' >/dev/null || true\n\tfi\nfi\nif [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-deconfigure" ] || [ "$1" = "abort-remove" ] ; then\n\tif [ -d /run/systemd/system ]; then\n\t\tsystemctl --system daemon-reload >/dev/null || true\n\t\tif [ -n "$2" ]; then _dh_action=restart; else _dh_action=start; fi\n\t\tdeb-systemd-invoke $_dh_action '"'"'docprinter.service'"'"' >/dev/null || true\n\tfi\nfi'
+SYSTEMD_POSTINST=$'if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-deconfigure" ] || [ "$1" = "abort-remove" ] ; then\n\tdeb-systemd-helper unmask '"'"'docprinter.service'"'"' >/dev/null 2>&1 || true\n\tif deb-systemd-helper --quiet was-enabled '"'"'docprinter.service'"'"'; then\n\t\tdeb-systemd-helper enable '"'"'docprinter.service'"'"' >/dev/null 2>&1 || true\n\telse\n\t\tdeb-systemd-helper update-state '"'"'docprinter.service'"'"' >/dev/null 2>&1 || true\n\tfi\nfi\nif [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-deconfigure" ] || [ "$1" = "abort-remove" ] ; then\n\tif [ -d /run/systemd/system ]; then\n\t\tsystemctl --system daemon-reload >/dev/null 2>&1 || true\n\tfi\nfi'
 
 SYSTEMD_PRERM=$'if [ -z "${DPKG_ROOT:-}" ] && [ "$1" = remove ] && [ -d /run/systemd/system ] ; then\n\tdeb-systemd-invoke stop '"'"'docprinter.service'"'"' >/dev/null || true\nfi'
 

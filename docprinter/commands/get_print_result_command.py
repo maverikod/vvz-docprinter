@@ -43,7 +43,7 @@ class GetPrintResultCommand(Command):
     """
 
     name = "get_print_result"
-    version = "0.2.0"
+    version = "0.2.4"
     descr = (
         "Fetch a rendered Word document by ``result_id`` returned from ``print``. "
         "Payload is base64-encoded file bytes."
@@ -119,10 +119,62 @@ class GetPrintResultCommand(Command):
                 "RESULT_READ_FAILED",
             ],
             "error_codes_note": (
-                "``-32602``: ``INVALID_DATA_TYPE``, ``RESULT_ID_INVALID``, "
-                "``RESULT_NOT_FOUND``. "
+                "``-32602``: ``INVALID_DATA_TYPE`` (missing/empty ``result_id``); "
+                "``RESULT_ID_INVALID`` (not a UUID); ``RESULT_NOT_FOUND`` (no file or "
+                "removed by TTL sweeper). "
                 "``-32603``: ``RESULT_READ_FAILED`` (I/O while reading the file)."
             ),
+            "return_value": {
+                "success": {
+                    "description": "Rendered document returned as base64.",
+                    "data": {
+                        "result_id": "Echo of the requested UUID.",
+                        "content_type": DOCX_MEDIA_TYPE,
+                        "document_base64": "Standard base64 of the ``.docx`` bytes.",
+                    },
+                    "example": {
+                        "result_id": "22222222-2222-4222-8222-222222222222",
+                        "content_type": DOCX_MEDIA_TYPE,
+                        "document_base64": "<base64 of .docx>",
+                    },
+                },
+                "error": {
+                    "description": "Invalid id or missing/expired output file.",
+                    "code": "JSON-RPC ``-32602`` or ``-32603`` for read I/O",
+                    "details": {
+                        "error_code": "Stable string from ``error_codes``",
+                        "result_id": "Canonical UUID when parsed",
+                    },
+                },
+            },
+            "error_cases": [
+                {
+                    "description": "Parameter missing or empty.",
+                    "message": "Parameter 'result_id' must be a non-empty string",
+                    "solution": "Pass the ``result_id`` string returned by ``print``.",
+                },
+                {
+                    "description": "String is not a valid UUID.",
+                    "message": "Invalid UUID in 'result_id'",
+                    "solution": "Use the exact UUID from ``print`` success payload.",
+                },
+                {
+                    "description": "Output file absent (never created or sweeper TTL).",
+                    "message": "Rendered document not found for this result_id",
+                    "solution": "Call soon after ``print``; check ``docprinter.output_ttl_seconds``.",
+                },
+                {
+                    "description": "File existed but could not be read from disk.",
+                    "message": "Failed to read document",
+                    "solution": "Check server logs and permissions on ``docprinter.output_dir``.",
+                },
+            ],
+            "best_practices": [
+                "Always use the ``result_id`` from the immediately preceding ``print`` call.",
+                "Decode ``document_base64`` and save as ``<result_id>.docx`` on the client.",
+                "Do not retry indefinitely after ``RESULT_NOT_FOUND``; re-run ``print`` instead.",
+                "Large documents inflate in base64; prefer fetching once right after render.",
+            ],
         }
 
     @classmethod

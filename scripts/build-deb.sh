@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # Build the docprinter Debian binary package after checking build dependencies.
+# Always runs scripts/prepare-deb-release.sh first (build + push to Docker Hub).
+# Requires Docker CLI, running daemon, and docker login (vasilyvz/docprinter).
+#
 # As non-root: verifies tools and dpkg-checkbuilddeps; if something is missing,
 # prints how to fix and exits 1 (re-run with root/sudo to auto-install).
 # As root: installs required packages via apt-get, then runs dpkg-buildpackage.
@@ -42,6 +45,7 @@ else
 fi
 
 if [[ "${BINARIES_OK}" == true ]] && [[ "${DEPS_OK}" == true ]]; then
+  "${ROOT}/scripts/prepare-deb-release.sh"
   exec dpkg-buildpackage -us -uc -b
 fi
 
@@ -83,4 +87,5 @@ if ! dpkg-checkbuilddeps 2>&1; then
   exit 1
 fi
 
+"${ROOT}/scripts/prepare-deb-release.sh"
 exec dpkg-buildpackage -us -uc -b

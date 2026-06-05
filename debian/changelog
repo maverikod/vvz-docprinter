@@ -1,3 +1,144 @@
+docprinter (0.2.0-21) unstable; urgency=medium
+
+  * postinst: generate registration.instance_uuid when null (fixes container exit 1).
+  * Default DOCPRINTER_NETWORK=host; simplify docker -p error text.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Sat, 07 Jun 2026 09:00:00 +0000
+
+docprinter (0.2.0-20) unstable; urgency=medium
+
+  * run-container: wait for running container; dump logs on crash; Type=simple
+    (fix notify PID warning and inactive service after instant container exit).
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Sat, 07 Jun 2026 08:00:00 +0000
+
+docprinter (0.2.0-19) unstable; urgency=medium
+
+  * Default DOCPRINTER_BIND=127.0.0.1 (localhost only); override in
+    /etc/default/docprinter with 0.0.0.0 or a host IP.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Sat, 07 Jun 2026 07:00:00 +0000
+
+docprinter (0.2.0-18) unstable; urgency=medium
+
+  * run-container: auto fallback bridge -> host on port publish failure; persist
+    DOCPRINTER_NETWORK=host. Fix StartLimit* in systemd [Unit] section.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Sat, 07 Jun 2026 06:00:00 +0000
+
+docprinter (0.2.0-17) unstable; urgency=medium
+
+  * DOCPRINTER_NETWORK=bridge|host — host mode bypasses docker -p when publish fails.
+  * RestartPreventExitStatus=125 — no restart loop on docker run failure.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Sat, 07 Jun 2026 05:00:00 +0000
+
+docprinter (0.2.0-16) unstable; urgency=medium
+
+  * Drop ensure-docker-iptables.sh — do not alter host Docker/iptables; only
+    remove-container + run-container. Minimal error text on publish failure.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Sat, 07 Jun 2026 04:00:00 +0000
+
+docprinter (0.2.0-15) unstable; urgency=medium
+
+  * Remove firewall/UFW references from docs and service helper messages.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Sat, 07 Jun 2026 03:00:00 +0000
+
+docprinter (0.2.0-14) unstable; urgency=medium
+
+  * ensure-docker-iptables.sh: restore Docker DOCKER chain; ExecStartPre.
+  * run-container: clearer message for iptables DNAT / missing DOCKER chain.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Sat, 07 Jun 2026 02:00:00 +0000
+
+docprinter (0.2.0-13) unstable; urgency=medium
+
+  * postinst: systemctl try-restart/start with non-fatal warning (no deb-systemd-invoke die).
+  * dh_installsystemd --no-start; TimeoutStartSec=120 for Type=notify.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Sat, 07 Jun 2026 01:00:00 +0000
+
+docprinter (0.2.0-12) unstable; urgency=medium
+
+  * Docker image tag always equals package Version (vasilyvz/docprinter:0.2.0-12).
+  * push.sh builds/pushes version tag first; postinst requires exact match, no :latest fallback.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Sat, 07 Jun 2026 00:00:00 +0000
+
+docprinter (0.2.0-11) unstable; urgency=medium
+
+  * prepare-deb-release: mandatory docker push on every .deb build; removed
+    BUILD_DEB_SKIP_DOCKER_PUSH bypass. debian/rules runs prepare via dh_prep.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Fri, 06 Jun 2026 23:00:00 +0000
+
+docprinter (0.2.0-10) unstable; urgency=medium
+
+  * postinst: fallback docker pull to :latest if version tag missing on Hub.
+  * prepare-deb-release: warn when BUILD_DEB_SKIP_DOCKER_PUSH skips Hub publish.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Fri, 06 Jun 2026 22:00:00 +0000
+
+docprinter (0.2.0-9) unstable; urgency=medium
+
+  * systemd: ExecStartPre/ExecStopPost remove-container.sh — stop+rm and
+    recreate container on every start/restart/stop.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Fri, 06 Jun 2026 21:00:00 +0000
+
+docprinter (0.2.0-8) unstable; urgency=medium
+
+  * run-container.sh: drop --restart unless-stopped (systemd owns lifecycle);
+    stronger container cleanup; networking failure hints (UFW/Docker).
+  * docprinter.service: ExecStartPre cleanup, RestartSec=15, start limit.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Fri, 06 Jun 2026 20:00:00 +0000
+
+docprinter (0.2.0-7) unstable; urgency=medium
+
+  * run-container.sh: preflight host port check; clear message on bind
+    conflict (Docker exit 125).
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Fri, 06 Jun 2026 19:00:00 +0000
+
+docprinter (0.2.0-6) unstable; urgency=medium
+
+  * Release rebuild (docker push + .deb via prepare-deb-release.sh).
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Fri, 06 Jun 2026 18:00:00 +0000
+
+docprinter (0.2.0-5) unstable; urgency=medium
+
+  * build-deb.sh / assemble-deb.sh: auto docker push via prepare-deb-release.sh
+    before .deb (BUILD_DEB_SKIP_DOCKER_PUSH=yes to skip).
+  * Fix postinst typo in container port message.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Fri, 06 Jun 2026 17:00:00 +0000
+
+docprinter (0.2.0-4) unstable; urgency=medium
+
+  * print/get_print_result: full metadata (return_value, error_cases, best_practices).
+  * Package pins Docker image vasilyvz/docprinter:0.2.0-4; postinst auto-pull on upgrade.
+  * Sync factory DOCPRINTER_IMAGE from /usr/share/docprinter/docker-image.env.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Fri, 06 Jun 2026 16:00:00 +0000
+
+docprinter (0.2.0-3) unstable; urgency=medium
+
+  * conf.json.example: enable MCP Proxy registration (server_id docprinter).
+  * postinst: set server.advertised_host from primary IP when unset.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Fri, 06 Jun 2026 14:00:00 +0000
+
+docprinter (0.2.0-2) unstable; urgency=medium
+
+  * Explicit host port publish (DOCPRINTER_HOST_PORT / DOCPRINTER_CONTAINER_PORT).
+  * Port mapping shown in postinst, journal, and systemctl status.
+
+ -- Vasiliy Zdanovskiy <vasilyvz@gmail.com>  Fri, 06 Jun 2026 12:00:00 +0000
+
 docprinter (0.2.0-1) unstable; urgency=medium
 
   * Debian package: systemd + Docker Hub image pull on configure.

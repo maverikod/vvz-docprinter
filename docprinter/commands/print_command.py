@@ -146,7 +146,7 @@ class PrintCommand(Command):
     """
 
     name = "print"
-    version = "0.2.3"
+    version = "0.2.4"
     descr = (
         "Render a .docx Jinja template from JSON context. "
         "Params are a single base64 ZIP with ``data.json`` and ``template.docx``."
@@ -179,11 +179,16 @@ class PrintCommand(Command):
                         "(no subdirectories or extra files)."
                     ),
                     "contentEncoding": "base64",
+                    "examples": [
+                        "<base64 ZIP with data.json and template.docx at archive root>",
+                    ],
                 },
             },
             "required": ["archive"],
             "additionalProperties": False,
-            "examples": [],
+            "examples": [
+                {"archive": "<base64 ZIP with data.json and template.docx at archive root>"},
+            ],
         }
 
     @classmethod
@@ -243,12 +248,69 @@ class PrintCommand(Command):
                 "RENDER_UNEXPECTED_ERROR",
             ],
             "error_codes_note": (
-                "``-32602``: ``INVALID_BASE64``, ``INVALID_ARCHIVE``, "
-                "``UNSAFE_ARCHIVE_MEMBER``, ``ARCHIVE_MISSING_REQUIRED_FILES``, "
-                "``INVALID_DATA_TYPE``. "
+                "``-32602``: ``INVALID_BASE64`` (bad base64); ``INVALID_ARCHIVE`` "
+                "(not a ZIP or unreadable ``data.json`` inside the archive); "
+                "``UNSAFE_ARCHIVE_MEMBER``; ``ARCHIVE_MISSING_REQUIRED_FILES``; "
+                "``INVALID_DATA_TYPE`` (empty ``archive``, non-object ``data.json`` "
+                "root, or non-object Jinja context). "
                 "``-32603``: template/render failures (``TEMPLATE_*``, "
                 "``RENDER_VALUE_ERROR``, ``RENDER_UNEXPECTED_ERROR``)."
             ),
+            "return_value": {
+                "success": {
+                    "description": "Template rendered; output stored server-side only.",
+                    "data": {
+                        "result_id": (
+                            "UUID4 string; basename of ``<result_id>.docx`` under "
+                            "``docprinter.output_dir``; pass to ``get_print_result``."
+                        ),
+                    },
+                    "example": {
+                        "result_id": "22222222-2222-4222-8222-222222222222",
+                    },
+                },
+                "error": {
+                    "description": "Expected validation, archive, or render failure.",
+                    "code": "JSON-RPC ``-32602`` (client/archive) or ``-32603`` (render)",
+                    "details": {
+                        "error_code": "Stable string from ``error_codes``",
+                        "errstr": "Human-readable detail when applicable",
+                    },
+                },
+            },
+            "error_cases": [
+                {
+                    "description": "Parameter missing or not a non-empty string.",
+                    "message": "Parameter 'archive' must be a non-empty string",
+                    "solution": "Send ``archive`` as a base64 string in ``params``.",
+                },
+                {
+                    "description": "Base64 alphabet or padding invalid.",
+                    "message": "Invalid base64 in 'archive'",
+                    "solution": "Re-encode the ZIP with standard base64 (no line breaks).",
+                },
+                {
+                    "description": "Bytes are not a ZIP or ``data.json`` is not valid JSON.",
+                    "message": "Archive is not a valid ZIP / Invalid data.json",
+                    "solution": "Build a ZIP with exactly ``data.json`` and ``template.docx`` at the root.",
+                },
+                {
+                    "description": "ZIP has wrong member names or paths.",
+                    "message": "Archive must contain exactly data.json and template.docx",
+                    "solution": "Use only root-level ``data.json`` and ``template.docx`` (no folders).",
+                },
+                {
+                    "description": "Jinja variable missing in template.",
+                    "message": "UndefinedError text from docxtpl",
+                    "solution": "Add variables to ``data.json`` or fix the ``template.docx`` placeholders.",
+                },
+            ],
+            "best_practices": [
+                "Call ``get_print_result`` immediately after ``print``; files are removed by the TTL sweeper.",
+                "Keep ZIP small: only ``data.json`` and ``template.docx`` at the archive root.",
+                "For legacy docbytpl jobs, put the variable dict in ``data.data`` (see ``detailed_description``).",
+                "Use ``help`` / ``GET /commands`` for the authoritative JSON Schema before building clients.",
+            ],
         }
 
     @classmethod
