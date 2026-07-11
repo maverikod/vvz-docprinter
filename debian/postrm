@@ -4,7 +4,7 @@ set -e
 case "$1" in
 purge)
     deluser docprinter 2>/dev/null || true
-    rm -rf /var/docprinter
+    rm -rf /var/lib/docprinter
     rm -rf /var/log/docprinter
     rm -rf /etc/docprinter
     ;;

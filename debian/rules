@@ -4,14 +4,6 @@ export DH_VERBOSE=1
 %:
 	dh $@
 
-override_dh_prep:
-	./scripts/prepare-deb-release.sh
-	dh_prep
-
-override_dh_installsystemd:
-	dh_installsystemd --no-start
-
 override_dh_fixperms:
 	dh_fixperms
 	chmod 0755 debian/docprinter/usr/lib/docprinter/run-container.sh
-	chmod 0755 debian/docprinter/usr/lib/docprinter/remove-container.sh

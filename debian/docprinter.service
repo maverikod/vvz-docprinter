@@ -4,22 +4,20 @@ Documentation=https://github.com/
 After=docker.service containerd.service network-online.target
 Wants=network-online.target
 Requires=docker.service
-StartLimitIntervalSec=300
-StartLimitBurst=5
 
 [Service]
-Type=simple
+Type=notify
+NotifyAccess=main
 EnvironmentFile=-/etc/default/docprinter
+# Logs: wrapper streams `docker logs -f` into this file; keep unit logs in journal minimal.
 StandardOutput=journal
 StandardError=journal
-ExecStartPre=/usr/lib/docprinter/remove-container.sh
 ExecStart=/usr/lib/docprinter/run-container.sh
-ExecStopPost=-/usr/lib/docprinter/remove-container.sh
+# Stop: SIGTERM to this script only first; script runs docker stop and stops sidecars.
 KillMode=mixed
 TimeoutStopSec=60
 Restart=on-failure
-RestartPreventExitStatus=125
-RestartSec=15
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

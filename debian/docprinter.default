@@ -1,11 +1,4 @@
-# DocPrinter Docker image on Docker Hub (postinst syncs from /usr/share/docprinter/docker-image.env on upgrade).
-DOCPRINTER_IMAGE=vasilyvz/docprinter:0.2.0-21
+# DocPrinter Docker image (override before first install or edit then reinstall).
+DOCPRINTER_IMAGE=docprinter:latest
 DOCPRINTER_NAME=docprinter
-# Host bind address: 127.0.0.1 (default, localhost only) or 0.0.0.0 / a specific host IP.
-DOCPRINTER_BIND=127.0.0.1
-# TCP port inside the container (must match --port passed to docprinter).
-DOCPRINTER_CONTAINER_PORT=9001
-# TCP port published on the host (docker -p HOST:CONTAINER). Ignored when DOCPRINTER_NETWORK=host.
-DOCPRINTER_HOST_PORT=9001
-# bridge: docker -p. host: --network host (default on hosts where docker -p is unavailable).
-DOCPRINTER_NETWORK=host
+DOCPRINTER_PORT=9001

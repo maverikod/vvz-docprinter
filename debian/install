@@ -1,4 +1,2 @@
 debian/conf.json.example usr/share/docprinter/
-debian/docker-image.env usr/share/docprinter/
 debian/run-container.sh usr/lib/docprinter/
-debian/remove-container.sh usr/lib/docprinter/

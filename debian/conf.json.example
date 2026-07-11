@@ -17,30 +17,21 @@
     "ssl": null
   },
   "registration": {
-    "enabled": true,
-    "protocol": "https",
-    "register_url": "https://192.168.254.26:3004/register",
-    "unregister_url": "https://192.168.254.26:3004/unregister",
+    "enabled": false,
+    "protocol": "http",
+    "register_url": null,
+    "unregister_url": null,
     "heartbeat_interval": 30,
-    "server_id": "docprinter",
-    "server_name": "docprinter",
+    "ssl": null,
+    "server_id": null,
+    "server_name": null,
     "instance_uuid": null,
     "auto_on_startup": true,
     "auto_on_shutdown": true,
-    "metadata": {
-      "server_id": "docprinter",
-      "server_name": "Document printer for 1C",
-      "description": "Python based template printer engine.\n\n###Execute: `call_server(server_id=\"docprinter\", copy_number=1, command=\"<name>\", params={...})`",
-      "version": "0.2.0-4"
-    },
+    "metadata": null,
     "heartbeat": {
-      "url": "https://192.168.254.26:3004/proxy/heartbeat",
+      "url": null,
       "interval": 30
-    },
-    "ssl": {
-      "crl": null,
-      "dnscheck": false,
-      "check_hostname": false
     }
   },
   "server_validation": {
